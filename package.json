@@ -1,0 +1,39 @@
+{
+  "name": "gitbook-note-cli",
+  "version": "1.0.0",
+  "description": "使用gitbook写笔记的cli工具，用于生成初始化文件",
+  "bin": {
+    "gitbook-note": "./bin/gitbook-note.js"
+  },
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wchaochao/gitbook-note-cli.git"
+  },
+  "keywords": [
+    "gitbook",
+    "cli"
+  ],
+  "author": "wchaochao <1244210319@qq.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/wchaochao/gitbook-note-cli/issues"
+  },
+  "homepage": "https://github.com/wchaochao/gitbook-note-cli#readme",
+  "dependencies": {
+    "commander": "^2.20.0",
+    "download-git-repo": "^2.0.0",
+    "glob": "^7.1.4",
+    "handlebars": "^4.1.2",
+    "inquirer": "^6.4.1",
+    "metalsmith": "^2.3.0",
+    "ora": "^3.4.0"
+  },
+  "devDependencies": {
+    "babel-eslint": "^10.0.2",
+    "eslint": "^6.0.1"
+  }
+}
