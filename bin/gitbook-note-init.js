@@ -6,8 +6,8 @@ const path = require('path')
 const fs = require('fs')
 const chalk = require('chalk')
 const logSymbols = require('log-symbols')
-const download = require('./lib/download')
-const generator = require('./lib/generator.js')
+const download = require('../lib/download')
+const generator = require('../lib/generator.js')
 
 program.usage('<project-name>').parse(process.argv)
 
@@ -58,7 +58,7 @@ if (list.length) {
 
 next && go()
 
-function go (project) {
+function go () {
   next.then(project => {
     if (project.root !== '.') {
       fs.mkdir(project.root)
@@ -74,15 +74,19 @@ function go (project) {
         message: 'project description',
         default: `A project named ${project.name}`
       }
-    ])
-  }).then(answer => {
-    return download(project.root).then(target => {
+    ]).then(answer => {
       return {
         ...project,
-        downloadTemp: target,
         metadata: {
           ...answer
         }
+      }
+    })
+  }).then(context => {
+    return download(context.root).then(target => {
+      return {
+        ...context,
+        downloadTemp: target
       }
     })
   }).then(context => {
