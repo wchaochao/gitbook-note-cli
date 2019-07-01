@@ -1,11 +1,10 @@
 #!/usr/bin/env node
 const program = require('commander')
 const glob = require('glob')
-const inquirer = require('inquirer')
 const path = require('path')
 const fs = require('fs')
-const chalk = require('chalk')
-const logSymbols = require('log-symbols')
+const output = require('../lib/output')
+const inquery = require('../lib/inquery')
 const download = require('../lib/download')
 const generator = require('../lib/generator.js')
 
@@ -13,7 +12,11 @@ program.usage('<project-name>').parse(process.argv)
 
 let projectName = program.args[0]
 if (!projectName) {
-  program.help()
+  output.failWithHelp({
+    text: 'Project name is not provided.',
+    program,
+    callback: text => text.replace('-init', ' init')
+  })
   return
 }
 
@@ -22,12 +25,12 @@ let rootName = path.basename(process.cwd())
 let next = undefined
 if (list.length) {
   let isExist = list.some(name => {
-    const fileName = path.resolve(process.cwd(), path.join('.', name))
+    const fileName = path.resolve(name)
     const isDir = fs.statSync(fileName).isDirectory()
     return name === projectName && isDir
   })
   if (isExist) {
-    console.log(`${projectName} existed`)
+    output.fail(`${projectName} existed`)
     return
   }
   next = Promise.resolve({
@@ -35,15 +38,7 @@ if (list.length) {
     root: projectName
   })
 } else if (rootName === projectName) {
-  next = inquirer.prompt([
-    {
-      name: 'buildInCurrent',
-      message: 'The current directory is empty, and the directory name is same to project name.' +
-      'Do you want to create a new project directly in the current directory?',
-      type: 'confirm',
-      default: true
-    }
-  ]).then(answer => {
+  next = inquery(['buildInCurrent']).then(answer => {
     return Promise.resolve({
       name: projectName,
       root: answer.buildInCurrent ? '.' : projectName
@@ -56,46 +51,25 @@ if (list.length) {
   })
 }
 
-next && go()
+go(next)
 
-function go () {
-  next.then(project => {
-    if (project.root !== '.') {
-      fs.mkdir(project.root)
-    }
-    return inquirer.prompt([
+async function go (next) {
+  try {
+    let project = await next
+    let answer = await inquery([
       {
         name: 'projectName',
-        message: 'project name',
-        default: project.name
+        meta: project.name
       },
       {
         name: 'projectDescription',
-        message: 'project description',
-        default: `A project named ${project.name}`
+        meta: project.name
       }
-    ]).then(answer => {
-      return {
-        ...project,
-        metadata: {
-          ...answer
-        }
-      }
-    })
-  }).then(context => {
-    return download(context.root).then(target => {
-      return {
-        ...context,
-        downloadTemp: target
-      }
-    })
-  }).then(context => {
-    return generator(context.metadata, context.downloadTemp, context.root).then(() => context)
-  }).then(context => {
-    console.log(logSymbols.success, chalk.green('create successfully.'))
-    console.log()
-    console.log(chalk.green(`cd ${context.root}\nmake install\nmake build`))
-  }).catch(err => {
-    console.error(logSymbols.error, chalk.red(`error: ${err.message}`))
-  })
+    ])
+    let downloadTemp = await download(project.root)
+    await generator(answer, downloadTemp, project.root)
+    output.success('create successfully.')
+  } catch (err) {
+    output.fail(err.message)
+  }
 }
