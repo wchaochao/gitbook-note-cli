@@ -11,44 +11,39 @@ const generator = require('../lib/generator.js')
 program.usage('<project-name>').parse(process.argv)
 
 let projectName = program.args[0]
-if (!projectName) {
-  output.failWithHelp({
-    text: 'Project name is not provided.',
-    program,
-    callback: text => text.replace('-init', ' init')
-  })
-  return
-}
-
-const list = glob.sync('*')
 let rootName = path.basename(process.cwd())
 let next = undefined
-if (list.length) {
-  let isExist = list.some(name => {
-    const fileName = path.resolve(name)
-    const isDir = fs.statSync(fileName).isDirectory()
-    return name === projectName && isDir
-  })
-  if (isExist) {
-    output.fail(`${projectName} existed`)
-    return
-  }
+
+if (!projectName) {
   next = Promise.resolve({
-    name: projectName,
-    root: projectName
-  })
-} else if (rootName === projectName) {
-  next = inquery(['buildInCurrent']).then(answer => {
-    return Promise.resolve({
-      name: projectName,
-      root: answer.buildInCurrent ? '.' : projectName
-    })
+    name: rootName,
+    root: '.'
   })
 } else {
-  next = Promise.resolve({
-    name: projectName,
-    root: projectName
-  })
+  const list = glob.sync('*')
+  if (list.length) {
+    let isExist = list.some(name => {
+      const fileName = path.resolve(name)
+      const isDir = fs.statSync(fileName).isDirectory()
+      return name === projectName && isDir
+    })
+    if (isExist) {
+      output.fail(`${projectName} existed`)
+      return
+    }
+  } else if (rootName === projectName) {
+    next = inquery(['buildInCurrent']).then(answer => {
+      return Promise.resolve({
+        name: projectName,
+        root: answer.buildInCurrent ? '.' : projectName
+      })
+    })
+  } else {
+    next = Promise.resolve({
+      name: projectName,
+      root: projectName
+    })
+  }
 }
 
 go(next)
@@ -56,6 +51,7 @@ go(next)
 async function go (next) {
   try {
     let project = await next
+    console.log(`gitbook init in ${project.root === '.' ? 'current' : project.name} directory`)
     let answer = await inquery([
       {
         name: 'projectName',
